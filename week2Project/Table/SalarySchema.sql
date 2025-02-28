@@ -1,3 +1,4 @@
+-- Salary Schema 
 create table salaries(
 employeeId int,
 salary int,

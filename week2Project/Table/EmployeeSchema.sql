@@ -1,3 +1,4 @@
+-- Employee  Schema
 create table Employee (
 employeeId int primary key,
 firstName varchar(20) not null,
