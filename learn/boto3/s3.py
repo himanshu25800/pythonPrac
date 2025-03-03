@@ -61,8 +61,13 @@ def uploadFile(fileName,bucketName,objectName=None):
 
     return True
 
+def downloadFile(bucketName , objectName , file):
+    s3 = boto3.client('s3')
 
-         
+    s3.download_file(bucketName, objectName , file)
+
+
+downloadFile("pasta-bucket-2702",'firstUpload.avif',"file2.avif",)
 
 # uploadFile("file1.avif","pasta-bucket-2702",'firstUpload.avif')
 
