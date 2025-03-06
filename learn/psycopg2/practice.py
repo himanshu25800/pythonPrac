@@ -24,10 +24,13 @@ def createCursor(connection):
         print(f"{e}")
 
 
-def executeSelectQuery(cursor, query):
+def executeSelectQuery(cursor, query, params=None):
    
     try:
-        cursor.execute(query)
+        if params ==None:
+            cursor.execute(query)
+        else :
+            cursor.execute(query , params)
         res = cursor.fetchall()
         return res
     except Exception as e:
@@ -35,33 +38,33 @@ def executeSelectQuery(cursor, query):
     return None
 
 
-def executeInsertQuery(cursor , query):
+def executeInsertQuery(cursor, query, params):
     try:
-        cursor.execute(query)
+        cursor.execute(query, params)
         cursor.connection.commit()
-        res = cursor.rowcount()
-        return res
+        res = cursor.rowcount
+        return f"{res} row added"
         
     except Exception as e:
         print(f"Error executing Insert Operation := {e}")
 
 
-def executeUpdateQuery(cursor , query):
+def executeUpdateQuery(cursor , query, params):
     try:
-        cursor.execute(query)
+        cursor.execute(query, params)
         cursor.connection.commit()
-        res = cursor.rowcount()
-        return res
+        res = cursor.rowcount
+        return f"{res} rows updated"
         
     except Exception as e:
         print(f"Error executing Insert Operation := {e}")
 
 
-def executeDeleteQuery(cursor, query):
+def executeDeleteQuery(cursor, query, params):
     try:
-        cursor.execute(query)
+        cursor.execute(query, params)
         cursor.connection.commit()
-        return cursor.rowcount
+        return f"{cursor.rowcount} rows deleted"
     except Exception as e:
         print(f"Error executing DELETE query: {e}")
     return None
@@ -104,9 +107,20 @@ if __name__=='__main__':
     # rows = cursor.fetchall()
     # print(rows)
 
+    # res = executeSelectQuery(cursor, "SELECT * FROM dummy where sname=%s;",("sara",))
+    # print(res)
     # get_tables(cursor)
 
-    res = executeSelectQuery(cursor , "SELECT * FROM dummy")
+    # res = executeInsertQuery(cursor , "Insert into dummy values(%s, %s, %s)", ("sara",54886,"gd"))
+    # print(res)
+
+    # res = executeUpdateQuery(cursor, "update dummy set sname=%s where sname=%s",("gef","xyz"))
+    # print(res)
+
+    res = executeDeleteQuery(cursor, "delete from dummy where sname = %s",("sara",))
+    print(res)
+
+    res = executeSelectQuery(cursor,"select * from dummy")
     print(res)
 
     closeConnection(con)
