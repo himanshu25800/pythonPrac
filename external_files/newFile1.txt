@@ -1,2 +1,0 @@
-This is file lineThis is second lineThis is first line
-This is second line

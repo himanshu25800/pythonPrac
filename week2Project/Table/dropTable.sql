@@ -1,3 +1,0 @@
--- drop table departments;
--- drop table employee;
--- drop table salaries;
