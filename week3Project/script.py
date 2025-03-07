@@ -18,11 +18,26 @@ class DBManage:
         except Exception as e:
             print(f"Database not connected\n {e}")
 
-    def createTable(self, query):
+    def createTable(self, query, params):
         try:
-            self.cursor.execute(query)
-            self.cursor.connection.commit()
-            print("Table created successfully")
+            self.cursor.execute('''                
+                with my_table as ( SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                ORDER BY table_name)
+                select * from my_table
+            ''')
+            res = self.cursor.fetchall()
+            # print(res , params)
+            existing_tables = [table[0].lower() for table in res]
+            print(existing_tables)
+            if params[0].lower() not in existing_tables:
+                print("Table not exist")
+                self.cursor.execute(query,params)
+                self.cursor.connection.commit()
+                print("Table created successfully")
+            else:
+                print("Table Already exist")
         except Exception as e:      
             print(f"Error creating table: {e}")
 
@@ -105,12 +120,19 @@ if __name__=="__main__":
     obj = DBManage("Employee","postgres","thinksys@123","localhost")
     # obj.get_tables()
 
-    res = createTableQuery = """
-        CREATE TABLE IF NOT EXISTS departments(
-            departmentId SERIAL PRIMARY KEY,
-            departmentName VARCHAR(50) NOT NULL
+    res = obj.createTable('''
+        create table %s (
+        employeeId int primary key,
+        firstName varchar(20) not null,
+        lastName varchar(20),
+        city varchar(20) default 'Noida',
+        dateOfBirth Date,
+        phoneNumber varchar(15) check (char_length(phoneNumber)>=10)
         );
-    """
+    ''',('newTable',))
+    print(res)
+
+    
 
     # res = obj.executeSelect("Select * from employeedepartment")
     # print(res)
