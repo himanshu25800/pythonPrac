@@ -18,9 +18,11 @@ def greet():
 def getAll():
     with connection:
         with connection.cursor() as cursor:
-            limit = request.args.get('limtt')
-            offset= request.args.get('offset')
-            cursor.execute('select * from employee')
+            pageNumber = int(request.args.get('pagenumber',1))
+            pageSize = int(request.args.get('pagesize',10))
+            limit = pageSize
+            offset = pageSize*(pageNumber-1)
+            cursor.execute('select * from employee order by employeeId asc limit %s offset %s',(limit,offset))
             result = cursor.fetchall()
             return jsonify(message={'record':cursor.rowcount,'info':result})
 
@@ -49,10 +51,31 @@ def post():
             while(i<len(data)):
                 id = data[i]['id']
                 fname = data[i]['fname']
+                status = valiadate.validateStr(fname)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'First Name Should not be empty'})
+                    i+=1
+                    continue
                 lname = data[i]['lname']
+                status = valiadate.validateStr(lname)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'Last Name Should not be empty'})
+                    i+=1
                 city = data[i]['city']
+                status = valiadate.validateStr(city)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'City Should not be empty'})
+                    i+=1
                 phonenumber = data[i]['phonenumber']
+                status = valiadate.validatePhone(phonenumber)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'Phone Number must be 10 digit'})
+                    i+=1
                 dob = data[i]['dob']
+                status = valiadate.validateDob(dob)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'Invalid date of birth'})
+                    i+=1
                 dob = datetime.strptime(dob, "%d/%m/%Y").strftime("%Y-%m-%d")
                 email = data[i]['email']
                 status, email  = valiadate.validateEMail(email)
@@ -88,18 +111,38 @@ def update():
 
             id = data.get('id')
             fname = data.get('fname')
+            status = valiadate.validateStr(fname)
+            if not status:
+                return jsonify({"result":False,"message":"First name should not be empty"})
+                
             lname = data.get('lname')
+            status = valiadate.validateStr(lname)
+            if not status:
+                return jsonify({"result":False,"message":"First name should not be empty"})
+                
             city = data.get('city')
+            status = valiadate.validateStr(lname)
+            if not status:
+                return jsonify({"result":False,"message":"First name should not be empty"})
+                
             dob = data.get('dob')
+            status = valiadate.validateDob(dob)
+            if not status:
+                return jsonify({"result":False,"message":"Invalid Date of birth"})
             dob = datetime.strptime(dob, "%d/%m/%Y").strftime("%Y-%m-%d")
-            phoneNumber = data.get('phonenumber')
-            email = data.get('email')
+            
             gender = data.get('gender')
+            status = valiadate.validateGender(gender)
+            if not status:
+                return jsonify({"result":False,"message":"First name should not be empty"})
+             
 
+            email = data.get('email')
             status , email = valiadate.validateEMail(email)
             if not status:
                 return jsonify({"result":False,"message":"Email is not in proper format"})
-                
+            
+            phoneNumber = data.get('phonenumber')
             status = valiadate.validatePhone(phoneNumber)
             if not status:
                 return jsonify({"result":False,"message":"PhoneNumber is not in proper format"})
@@ -125,6 +168,9 @@ def search():
            id = request.args.get('id') 
            cursor.execute('select * from employee where employeeId=%s',(id,))
            result = cursor.fetchall()
+
+           if not result :
+               return jsonify(message="No employee found with this employee id")
            return jsonify(result)
 
 
