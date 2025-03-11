@@ -34,7 +34,7 @@ def validateGender(gender):
     return False
 
 def validateDob(dob):
-    dob = datetime.datetime.strptime(dob, "%d/%m/%y")
+    dob = datetime.datetime.strptime(dob, "%d/%m/%Y")
 
     if dob > datetime.datetime.now():
         return False

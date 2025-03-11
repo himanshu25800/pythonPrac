@@ -1,18 +1,67 @@
 from flask import Flask, jsonify, request
 import psycopg2
-from datetime import datetime
+from datetime import datetime, timedelta
 import valiadate
-
+import jwt
 
 app = Flask(__name__)
 connection = psycopg2.connect(database='Employee', user='postgres', password='thinksys@123', host='localhost', port=5432)
 if connection:
     print("Database Connected successfully")
 
+def authorized(token):
+    if not token:
+        return False
+    try:
+        if token.startswith("Bearer "):
+            token = token.split(" ")[1]  # Extract the actual JWT
+        print(token)
+        decoded = jwt.decode(token, "secret", algorithms=["HS256"])
+        print(decoded)
+        if decoded :
+            print(decoded.get('user'), decoded.get('password'))
+            if decoded.get('user') == "Himanshu" and decoded.get('password') == "12345678":
+                return True
+
+    except jwt.ExpiredSignatureError:
+        print("Token has expired")
+        return False  # Token expired
+    except jwt.DecodeError:
+        print("Invalid token")
+        return False  # Invalid token
+    except jwt.InvalidTokenError:
+        print("Invalid token format")
+        return False
+
 
 @app.route('/', methods=['GET'])
 def greet():
     return jsonify(message="All fine !")
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+
+    user = data['user']
+    password = data['password']
+
+    # print(user, password)
+    
+    if user == 'Himanshu':
+        if password == "12345678":
+            payload = {
+                "user" : user,
+                "password" : password,
+                "exp" : datetime.now() + timedelta(hours=1)
+            }
+            token = jwt.encode(payload , "secret" , algorithm="HS256")
+            print(token)
+            authorized(token)
+
+            return jsonify(message = "Login was successfully" , token= token)
+
+    return jsonify(message="Login Fail !")
+
 
 @app.route('/getall', methods=['GET'])
 def getAll():
@@ -38,9 +87,16 @@ def getById():
 
 @app.route('/insert/', methods=['POST'])
 def post():
+    token = request.headers.get('Authorization')
+    print(token.split()[1])
+    status = authorized(token)
+    print(status)
+    if not status:
+        return jsonify(message="Sorry you are not authorized")
     with connection:
         with connection.cursor() as cursor:
             res = request.get_json()
+
             # print(res)
             data = res['data']
             # print(len(data))
@@ -61,21 +117,25 @@ def post():
                 if not status:
                     message.append({'rowsAffected':0, 'data': 'Last Name Should not be empty'})
                     i+=1
+                    continue
                 city = data[i]['city']
                 status = valiadate.validateStr(city)
                 if not status:
                     message.append({'rowsAffected':0, 'data': 'City Should not be empty'})
                     i+=1
+                    continue
                 phonenumber = data[i]['phonenumber']
                 status = valiadate.validatePhone(phonenumber)
                 if not status:
                     message.append({'rowsAffected':0, 'data': 'Phone Number must be 10 digit'})
                     i+=1
+                    continue
                 dob = data[i]['dob']
                 status = valiadate.validateDob(dob)
                 if not status:
                     message.append({'rowsAffected':0, 'data': 'Invalid date of birth'})
                     i+=1
+                    continue
                 dob = datetime.strptime(dob, "%d/%m/%Y").strftime("%Y-%m-%d")
                 email = data[i]['email']
                 status, email  = valiadate.validateEMail(email)
@@ -85,6 +145,11 @@ def post():
                     continue
                     
                 gender = data[i]['gender']
+                status = valiadate.validateGender(gender)
+                if not status:
+                    message.append({'rowsAffected':0, 'data': 'Invalid Gender'})
+                    i+=1
+                    continue
                 
                 # print(data[i]['id'], data[i]['fname'], data[i]['lname'], data[i]['city'],data[i]['phonenumber'],data[i]['dob'],data[i]['email'],data[i]['gender'])
 
@@ -98,13 +163,20 @@ def post():
 
                 i+=1
 
-            print(message)
+            # print(message)
             return jsonify(message)
 
             # return jsonify(message='Everything is ok')
 
 @app.route('/update/', methods=['PUT'])
 def update():
+    token = request.headers.get('Authorization')
+    # token = request.authorization.get('Bearer Token')
+
+    status = authorized(token)
+    print(status)
+    if not status:
+        return jsonify(message="Sorry you are not authorized")
     with connection:
         with connection.cursor() as cursor:
             data = request.get_json()
@@ -163,6 +235,13 @@ def update():
 
 @app.route('/search/', methods=['GET'])
 def search():
+    token = request.headers.get('Authorization')
+
+    status = authorized(token)
+    print(status)
+    if not status:
+        return jsonify(message="Sorry you are not authorized")
+    
     with connection:
         with connection.cursor() as cursor:
            id = request.args.get('id') 
