@@ -1,14 +1,10 @@
 from flask import Flask, jsonify, request
-import psycopg2
 from datetime import datetime, timedelta
 import validate as validate
 import jwt
 from middleware import authorized
-from configparser import ConfigParser
 from services.db import Database
-
-config = ConfigParser()
-config.read("config.ini")
+import services.auth as auth
 
 app = Flask(__name__)
 dbObject = Database()
@@ -31,22 +27,9 @@ def login():
     user = data['user']
     password = data['password']
 
-    # print(user, password)
+    message = auth.login(user, password)
     
-    #username and pass config
-    if user == config["user"]["name"]:
-        if password == config["user"]["password"]:
-            payload = {
-                "user" : user,
-                "password" : password,
-                "exp": (datetime.now() + timedelta(hours=1)).timestamp() 
-            }
-            token = jwt.encode(payload , "secret" , algorithm="HS256")
-            print(token)
-
-            return jsonify(message = "Login was successfully" , token=token)
-
-    return jsonify(message="Login Fail !")
+    return jsonify(message)
 
 
 #db service
