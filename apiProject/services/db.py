@@ -1,10 +1,11 @@
 import psycopg2
 from configparser import ConfigParser
-from flask import jsonify
+
 
 config = ConfigParser()
 config.read("config.ini")
 
+print(config["database"]["name"], config["database"]["user"], config["database"]["password"], config["database"]["host"],config["database"]["port"])
 
 class Database:
     def __init__(self):
@@ -39,8 +40,6 @@ class Database:
         result = self.cursor.fetchall()
         message={'record':self.cursor.rowcount,'info':result}
         return message
-        # return jsonify(message={'record':self.cursor.rowcount,'info':result})
-
     
     
     def getOne(self, id):
