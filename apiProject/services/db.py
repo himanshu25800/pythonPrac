@@ -1,11 +1,13 @@
 import psycopg2
 from configparser import ConfigParser
+from services.encrypttext import hashPassword
 
 
 config = ConfigParser()
 config.read("config.ini")
 
-print(config["database"]["name"], config["database"]["user"], config["database"]["password"], config["database"]["host"],config["database"]["port"])
+
+# print(config["database"]["name"], config["database"]["user"], config["database"]["password"], config["database"]["host"],config["database"]["port"])
 
 class Database:
     def __init__(self):
@@ -42,24 +44,27 @@ class Database:
         return message
     
     
-    def getOne(self, id):
-        self.cursor.execute('select * from employee where employeeId=%s',(id,))
-        result = self.cursor.fetchone()
-        message={'record':self.cursor.rowcount,'info':result}
+    def getList(self, id):
+        self.cursor.execute('select getList(%s)',(id,))
+        result = self.cursor.fetchall()
+
+        message={'record':self.cursor.rowcount,'info':[m for m in result]}
         return message
 
     
     
     def search(self, id):
         self.cursor.execute('select * from employee where employeeId=%s',(id,))
-        result = self.cursor.fetchall()
+        result = self.cursor.fetchone()
         return result
     
 
     
     def update(self, data):
         
-        self.cursor.execute(f"select updateInDb('{data['id']}','{data['fname']}', '{data['lname']}','{data['city']}','{data['dob']}', '{data['phonenumber']}','{data['email']}','{data['gender']}')")
+
+        hashedPassword = hashPassword(data['password'])
+        self.cursor.execute(f"select updateInDb('{data['id']}','{data['fname']}', '{data['lname']}','{data['city']}','{data['dob']}', '{data['phonenumber']}','{data['email']}','{data['gender']}','{hashPassword}')")
         
         result = self.cursor.fetchone()
         return {"status": "success", "message": result}
@@ -68,7 +73,8 @@ class Database:
 
     def insert(self, data):
 
-        self.cursor.execute(f"SELECT insertindb({data['id']}, '{data['fname']}', '{data['lname']}', '{data['city']}', '{data['dob']}', '{data['phonenumber']}', '{data['email']}', '{data['gender']}')")
+        hashedPassword = hashPassword(data['password'])
+        self.cursor.execute(f"SELECT insertindb({data['id']}, '{data['fname']}', '{data['lname']}', '{data['city']}', '{data['dob']}', '{data['phonenumber']}', '{data['email']}', '{data['gender']}', '{hashPassword}')")
 
         result = self.cursor.fetchone()
 

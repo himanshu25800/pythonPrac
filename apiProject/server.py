@@ -1,10 +1,9 @@
 from flask import Flask, jsonify, request
-from datetime import datetime, timedelta
 import validate as validate
-import jwt
-from middleware import authorized
+from middleware import authorized, getID
 from services.db import Database
 import services.auth as auth
+from services.sendMail import sendMail
 
 app = Flask(__name__)
 dbObject = Database()
@@ -24,10 +23,10 @@ def greet():
 def login():
     data = request.get_json()
 
-    user = data['user']
+    userId = data['userId']
     password = data['password']
 
-    message = auth.login(user, password)
+    message = auth.login(userId, password)
     
     return jsonify(message)
 
@@ -41,12 +40,17 @@ def getAll():
     return jsonify(message)
 
 
-@app.route('/getone/', methods=['GET'])
-def getById():
-    id = request.args.get('id') 
-    message = dbObject.getOne(id)
+@app.route('/getlist/', methods=['GET'])
+def getList():
+    # id = request.args.get('id')
+
+    token = request.headers.get('Authorization')
+    
+    id = getID(token)
+
+    message = dbObject.getList(id)
     if not message:
-        return jsonify(message="No employee found with this employee id")
+        return jsonify(message="No employee found with this manager id")
     return jsonify(message)
 
 
@@ -61,7 +65,7 @@ def post():
                     message.append({'error':[m for m in mess]})
                     continue
                 
-
+                sendMail()
                 result = dbObject.insert(data)
                 message.append(result)
                 
@@ -72,14 +76,15 @@ def post():
 @app.route('/update/', methods=['PUT'])
 def update():
 
-            data = request.get_json()
+    data = request.get_json()
 
-            result , mess = validate.validateData(data)
-            if not result:
-                return jsonify({"result":result,"message":mess})
-            
-            message = dbObject.update(data)
-            return jsonify(message)
+    result , mess = validate.validateData(data)
+    if not result:
+        return jsonify({"result":result,"message":mess})
+    
+    message = dbObject.update(data)
+    sendMail()
+    return jsonify(message)
 
 
 @app.route('/search/', methods=['GET'])
@@ -96,3 +101,13 @@ def search():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+#email using python
+# password field in database and check from there.
+# get list of employee based on managers from table. 
+
+
+# parquet file
+#schema in db
+#CRON Jobs

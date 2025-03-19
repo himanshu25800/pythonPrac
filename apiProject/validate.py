@@ -55,6 +55,11 @@ def validateStr(str):
     return True
 
 
+def validatePassword(str):
+    if len(str)>=8 :
+        return True
+    return False
+
 def validateData(data):
     message = []
     result = True
@@ -104,6 +109,14 @@ def validateData(data):
     if not status:
         result = False
         message.append('Invalid Gender')
+
+    password = data['password']
+    status = validatePassword(password)
+    if not status:
+        result = False
+        message.append('Invalid Password')
+
+    
     
 
     return result, message

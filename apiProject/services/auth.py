@@ -1,15 +1,26 @@
 from datetime import datetime , timedelta
 import configparser
 import jwt
+from services.db import Database
+from services.encrypttext import isPasswordCorrect
 
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-def login(user, password):
-    if user == config["user"]["name"]:
-        if password == config["user"]["password"]:
+dbObject = Database()
+
+def login(userId, password):
+
+    user = dbObject.search(userId)
+
+    if user:
+        dbPassword = user[8]
+        # print(user[8])
+        
+        # if dbPassword == password:
+        if isPasswordCorrect(password, dbPassword):
             payload = {
-                "user" : user,
+                "userId" : userId,
                 "password" : password,
                 "exp": (datetime.now() + timedelta(hours=1)).timestamp() 
             }
@@ -17,5 +28,8 @@ def login(user, password):
             print(token)
 
             return {'message' : "Login was successfully" , 'token' : token}
-
-    return {'message' : "Login Fail !"}
+        else :
+            return {'message' : "Login Fail password Incorrect !"}
+    else :
+        return {'message' : "Login Fail user doesn't exist !"}
+    
