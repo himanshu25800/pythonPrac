@@ -1,6 +1,7 @@
 import psycopg2
 from configparser import ConfigParser
 from services.encrypttext import hashPassword
+from collections import OrderedDict
 
 
 config = ConfigParser()
@@ -40,34 +41,48 @@ class Database:
         offset = pageSize*(pageNumber-1)
         self.cursor.execute('select * from employee order by employeeId asc limit %s offset %s',(limit,offset))
         result = self.cursor.fetchall()
-        message={'record':self.cursor.rowcount,'info':result}
+        formatted_results = [self.formatData(row) for row in result]
+        formatted_results = [Database.removePassword(row) for row in formatted_results]
+        message={'record':self.cursor.rowcount,'info':formatted_results}
         return message
     
     
+
     def getList(self, id):
         self.cursor.execute('select getList(%s)',(id,))
         result = self.cursor.fetchall()
-
-        message={'record':self.cursor.rowcount,'info':[m for m in result]}
+        result = [m for m in result[0][0]]
+        result = [Database.removePassword(m) for m in result]
+        # print(result)
+        message={'record':len(result),'info':result}
         return message
 
     
+    def getPassword(self, id):
+        self.cursor.execute('select * from employee where employeeId=%s',(id,))
+        result = self.cursor.fetchone()
+        # result = self.formatData(result)
+        # print(result)
+        return result[8]
+
     
     def search(self, id):
         self.cursor.execute('select * from employee where employeeId=%s',(id,))
         result = self.cursor.fetchone()
+        result = self.formatData(result)
+        # print(result)
+        result = Database.removePassword(result)
         return result
     
 
     
     def update(self, data):
-        
-
-        hashedPassword = hashPassword(data['password'])
-        self.cursor.execute(f"select updateInDb('{data['id']}','{data['fname']}', '{data['lname']}','{data['city']}','{data['dob']}', '{data['phonenumber']}','{data['email']}','{data['gender']}','{hashPassword}')")
+        hashedPassword = hashPassword(data['password']).decode('utf-8')
+        self.cursor.execute(f"select updateInDb('{data['id']}','{data['fname']}', '{data['lname']}','{data['city']}','{data['dob']}', '{data['phonenumber']}','{data['email']}','{data['gender']}','{hashedPassword}')")
         
         result = self.cursor.fetchone()
-        return {"status": "success", "message": result}
+        result = result[0]
+        return {"Updated Row": self.cursor.rowcount, "message": result}
 
 
 
@@ -77,5 +92,21 @@ class Database:
         self.cursor.execute(f"SELECT insertindb({data['id']}, '{data['fname']}', '{data['lname']}', '{data['city']}', '{data['dob']}', '{data['phonenumber']}', '{data['email']}', '{data['gender']}', '{hashPassword}')")
 
         result = self.cursor.fetchone()
+        result = result[0]
 
-        return {"status": "success", "message": result}
+        return {"Updated Row": self.cursor.rowcount, "message": result}
+    
+    def formatData(self, list):
+        col_names = [desc[0] for desc in self.cursor.description]
+        desired_order = ["employeeid", "firstname", "lastname", "city", "dateofbirth", "phonenumber", "email", "gender"]
+
+        result = dict(zip(col_names,list))
+
+        ordered_data = OrderedDict((key, result[key]) for key in desired_order if key in result)
+        # print(ordered_data)
+        return ordered_data
+    
+    @staticmethod
+    def removePassword(obj):
+        obj.pop("userpassword", None)
+        return obj

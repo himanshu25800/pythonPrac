@@ -56,21 +56,21 @@ def getList():
 
 @app.route('/insert/', methods=['POST'])
 def post():
-            res = request.get_json()
-            
-            message =[]
-            for data in res:
-                result, mess = validate.validateData(data)
-                if not result:
-                    message.append({'error':[m for m in mess]})
-                    continue
-                
-                sendMail()
-                result = dbObject.insert(data)
-                message.append(result)
-                
-            # print(message)
-            return jsonify(message)
+    res = request.get_json()
+    
+    message =[]
+    for data in res:
+        result, mess = validate.validateData(data)
+        if not result:
+            message.append({'error':[m for m in mess]})
+            continue
+        
+        sendMail()
+        result = dbObject.insert(data)
+        message.append(result)
+        
+    # print(message)
+    return jsonify(message)
 
 
 @app.route('/update/', methods=['PUT'])

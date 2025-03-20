@@ -11,11 +11,9 @@ dbObject = Database()
 
 def login(userId, password):
 
-    user = dbObject.search(userId)
+    dbPassword = dbObject.getPassword(userId)
 
-    if user:
-        dbPassword = user[8]
-        # print(user[8])
+    if dbPassword:
         
         # if dbPassword == password:
         if isPasswordCorrect(password, dbPassword):
@@ -25,7 +23,7 @@ def login(userId, password):
                 "exp": (datetime.now() + timedelta(hours=1)).timestamp() 
             }
             token = jwt.encode(payload , "secret" , algorithm="HS256")
-            print(token)
+            # print(token)
 
             return {'message' : "Login was successfully" , 'token' : token}
         else :

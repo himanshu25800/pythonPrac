@@ -24,9 +24,9 @@ def authorized():
         decoded = jwt.decode(token, "secret", algorithms=["HS256"])
         # print(decoded)
         if decoded :
-            user = dbObject.search(decoded.get('userId'))
+            user = dbObject.getPassword(decoded.get('userId'))
             # print(decoded.get('user'), decoded.get('password'))
-            if user and isPasswordCorrect(decoded.get('password'), user[8]):
+            if user and isPasswordCorrect(decoded.get('password'), user):
                 return None
         return jsonify(message = "Not authorized "), 401
 
@@ -59,3 +59,5 @@ def getID(token):
         
     except jwt.InvalidTokenError:
         return jsonify({"message":"Invalid Token"}), 401
+
+
