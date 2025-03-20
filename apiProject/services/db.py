@@ -2,6 +2,7 @@ import psycopg2
 from configparser import ConfigParser
 from services.encrypttext import hashPassword
 from collections import OrderedDict
+import json
 
 
 config = ConfigParser()
@@ -28,6 +29,8 @@ class Database:
 
             if(self.conn):
                 self.cursor = self.conn.cursor()
+                self.conn.autocommit = True 
+
             
             print(f"{DB_NAME} Database connected successfully")
 
@@ -82,20 +85,24 @@ class Database:
         
         result = self.cursor.fetchone()
         result = result[0]
-        return {"Updated Row": self.cursor.rowcount, "message": result}
+        return result
+        # return {"Updated Row": self.cursor.rowcount, "message": result}
 
 
 
     def insert(self, data):
 
         hashedPassword = hashPassword(data['password'])
-        self.cursor.execute(f"SELECT insertindb({data['id']}, '{data['fname']}', '{data['lname']}', '{data['city']}', '{data['dob']}', '{data['phonenumber']}', '{data['email']}', '{data['gender']}', '{hashPassword}')")
+        hashedPassword = hashedPassword.decode('utf-8')
+        self.cursor.execute(f"SELECT insertindb({data['id']}, '{data['fname']}', '{data['lname']}', '{data['city']}', '{data['dob']}', '{data['phonenumber']}', '{data['email']}', '{data['gender']}', '{hashedPassword}')")
 
-        result = self.cursor.fetchone()
-        result = result[0]
+        result = self.cursor.fetchone()[0]
+        result = json.loads(result)
 
-        return {"Updated Row": self.cursor.rowcount, "message": result}
+        return result
     
+
+
     def formatData(self, list):
         col_names = [desc[0] for desc in self.cursor.description]
         desired_order = ["employeeid", "firstname", "lastname", "city", "dateofbirth", "phonenumber", "email", "gender"]
@@ -106,6 +113,7 @@ class Database:
         # print(ordered_data)
         return ordered_data
     
+
     @staticmethod
     def removePassword(obj):
         obj.pop("userpassword", None)
